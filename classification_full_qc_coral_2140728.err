@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/lustre/home/nothackerht/sers_project/Classification_code/run_classification_preprocessing_sweep_boxes123_athena.py", line 1969, in <module>
+    main()
+  File "/lustre/home/nothackerht/sers_project/Classification_code/run_classification_preprocessing_sweep_boxes123_athena.py", line 1874, in main
+    qc_tr = load_qc_cohort(
+            ^^^^^^^^^^^^^^^
+  File "/lustre/home/nothackerht/sers_project/Classification_code/run_classification_preprocessing_sweep_boxes123_athena.py", line 404, in load_qc_cohort
+    result = load_data_qc(
+             ^^^^^^^^^^^^^
+  File "/lustre/home/nothackerht/sers_project/Classification_code/data_loader_qc.py", line 356, in load_data
+    raise KeyError(
+KeyError: 'QC missing 9 spectrum_key(s) for sample AdCo_001. Example: Box1-2|AdCo_001|AdCo_001_Map1_10%_10Vis_20sec+10sec_15accm.txt|pos-200'

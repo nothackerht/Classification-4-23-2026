@@ -1,0 +1,126 @@
+============================================================
+RUNNING full classification sweep with QC + CORAL
+  box12_data   = /lustre/home/nothackerht/sers_project/data/Box12_spectra
+  box3_data    = /lustre/home/nothackerht/sers_project/data/Box3_spectra
+  box12_meta   = /lustre/home/nothackerht/sers_project/data/Box12_metadata.csv
+  box3_meta    = /lustre/home/nothackerht/sers_project/data/Box3_metadata.csv
+  qc_metrics   = /lustre/home/nothackerht/sers_project/data/QC_metrics_per_spectrum.csv
+  out_root     = /lustre/home/nothackerht/sers_project/results/CLASSIFICATION_FULL_QC_CORAL
+============================================================
+2026-04-22 18:17:32 [INFO] ============================================================
+2026-04-22 18:17:32 [INFO] SERS Classification Sweep — Athena (QC + CORAL enabled)
+2026-04-22 18:17:32 [INFO] ============================================================
+2026-04-22 18:17:32 [INFO] Loading train data (baseline): /lustre/home/nothackerht/sers_project/data/Box12_spectra
+
+=== Alignment Report (first 5 samples) ===
+AdCo_001:
+   AdCo_001_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_001_Map3_10%_10Vis_20sec+10sec_15accm.txt
+AdCo_002:
+   AdCo_002_Map1_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map1_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map1_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map2_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map2_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map2_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map3_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map3_10%_10Vis_20sec+10sec_15acc.txt
+   AdCo_002_Map3_10%_10Vis_20sec+10sec_15acc.txt
+AdCo_003:
+   AdCo_003_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_003_Map3_10%_10Vis_20sec+10sec_15accm.txt
+AdCo_004:
+   AdCo_004_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_004_Map3_10%_10Vis_20sec+10sec_15accm.txt
+AdCo_005:
+   AdCo_005_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map1_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map2_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map3_10%_10Vis_20sec+10sec_15accm.txt
+   AdCo_005_Map3_10%_10Vis_20sec+10sec_15accm.txt
+===========================================
+
+2026-04-22 18:18:02 [INFO] Loading test data  (baseline): /lustre/home/nothackerht/sers_project/data/Box3_spectra
+
+=== Alignment Report (first 5 samples) ===
+DM1_080:
+   DM1_080_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_080_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+DM1_082:
+   DM1_082_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_082_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+DM1_084:
+   DM1_084_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map1_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map2_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+   DM1_084_Map3_10%_10Vis_20sec+10sec_15accm_03.txt
+DM1_086:
+   DM1_086_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_086_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+DM1_088:
+   DM1_088_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map1_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map2_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+   DM1_088_Map3_10__10Vis_20sec+10sec_15accm_03.txt
+===========================================
+
+2026-04-22 18:18:07 [INFO] Precomputing ALS baseline corrections (baseline data)...
+2026-04-22 18:58:48 [INFO] Baseline correction done.
+2026-04-22 18:58:49 [INFO] Loading QC-filtered data from: /lustre/home/nothackerht/sers_project/data/QC_metrics_per_spectrum.csv
+2026-04-22 18:58:49 [INFO]   Box train label: 'Box1-2' | Box test label: 'Box3'
