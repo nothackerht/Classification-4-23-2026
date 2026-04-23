@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 
 class Preprocessing:
@@ -126,3 +127,90 @@ def coral_align_target_to_source(X_source: np.ndarray, X_target: np.ndarray, eps
 
     Xt_aligned = Xt0 @ Ct_invsqrt @ Cs_sqrt + mu_s
     return Xt_aligned.astype(np.float32)
+
+
+# ---------------------------------------------------------------------------
+# Fast parallel ALS baseline correction
+# ---------------------------------------------------------------------------
+
+@functools.lru_cache(maxsize=8)
+def build_als_penalty(L: int, lam: float):
+    """Build lam * D'D once as a sparse CSC matrix, cached by (L, lam).
+
+    D is the (L-2) × L second-difference operator; D'D is pentadiagonal.
+    The lru_cache means repeated calls with the same (L, lam) — e.g. across
+    train, test, and QC cohorts in the same run — return the same object at
+    zero cost.
+    """
+    try:
+        from scipy.sparse import diags as _sp_diags
+    except ImportError:
+        raise ImportError(
+            "SciPy is required for fast ALS baseline correction. "
+            "Install it with:  pip install scipy"
+        ) from None
+    e = np.ones(L - 2)
+    D = _sp_diags([e, -2.0 * e, e], [0, 1, 2], shape=(L - 2, L), format='csr')
+    return (lam * (D.T @ D)).tocsc()
+
+
+def als_baseline_sparse(
+    y: np.ndarray,
+    DtD_lam,
+    p: float = 0.01,
+    niter: int = 10,
+) -> np.ndarray:
+    """ALS baseline using a pre-built sparse penalty (from build_als_penalty).
+
+    Identical algorithm to als_baseline(); output agrees within floating-point
+    tolerance.  Replaces the O(L³) dense solve per iteration with an O(L)
+    sparse solve on the pentadiagonal system, eliminating the per-spectrum
+    D-matrix build and the per-iteration D'D recompute.
+    """
+    from scipy.sparse import diags as _sp_diags
+    from scipy.sparse.linalg import spsolve
+    y = np.asarray(y, dtype=np.float64)
+    L = len(y)
+    w = np.ones(L, dtype=np.float64)
+    for _ in range(niter):
+        Z = _sp_diags([w], [0], shape=(L, L), format='csc') + DtD_lam
+        z = spsolve(Z, w * y)
+        w = p * (y > z).astype(np.float64) + (1.0 - p) * (y < z).astype(np.float64)
+    return z
+
+
+def baseline_correct_matrix_parallel(
+    X: np.ndarray,
+    lam: float = 1e6,
+    p: float = 0.01,
+    niter: int = 10,
+    n_workers: int = 1,
+) -> np.ndarray:
+    """Parallel ALS baseline correction for a (n_features, n_spectra) matrix.
+
+    DtD_lam is built once (and cached across calls via lru_cache on
+    build_als_penalty), then shared read-only across all threads via closure.
+    Uses backend='threading' so the cached sparse matrix is never serialized —
+    scipy sparse ops (SuperLU spsolve, sparse arithmetic) all release the GIL,
+    making threading both safe and faster than loky on Windows.
+
+    n_workers=-1 uses all available CPUs.  Call this during the precompute
+    stage (before the main joblib sweep) so there is no contention with
+    sweep workers.
+    """
+    from joblib import Parallel, delayed
+    X = np.asarray(X, dtype=np.float64)
+    L, N = X.shape
+    DtD_lam = build_als_penalty(L, lam)   # cached: free on 2nd+ call
+
+    def _correct(col: np.ndarray) -> np.ndarray:
+        # DtD_lam captured read-only from enclosing scope; thread-safe.
+        return col - als_baseline_sparse(col, DtD_lam, p=p, niter=niter)
+
+    if n_workers == 1:
+        cols = [_correct(X[:, j]) for j in range(N)]
+    else:
+        cols = Parallel(n_jobs=n_workers, backend='threading')(
+            delayed(_correct)(X[:, j]) for j in range(N)
+        )
+    return np.column_stack(cols)

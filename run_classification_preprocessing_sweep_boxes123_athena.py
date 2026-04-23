@@ -58,7 +58,10 @@ from sklearn.model_selection import LeaveOneGroupOut
 
 # ── Project imports ──────────────────────────────────────────────────────────
 from data_loader import load_data                          # baseline loader (original)
-from preprocessing import Preprocessing                    # preprocessing module (original)
+from preprocessing import (                                # preprocessing module (original)
+    Preprocessing,
+    baseline_correct_matrix_parallel as _bc_parallel,
+)
 
 # QC-aware loader (new module in same directory)
 try:
@@ -197,6 +200,12 @@ def parse_args(argv=None):
                    help="Box label for Box3 test data in QC file (default: 'Box3')")
 
     p.add_argument("--max-workers", "-j", type=int, default=1)
+    p.add_argument(
+        "--baseline-workers", type=int, default=-1,
+        help="Workers for parallel ALS baseline precompute "
+             "(default: -1 = all CPUs). Runs before the main sweep "
+             "so there is no contention with --max-workers.",
+    )
     p.add_argument("--force", action="store_true")
 
     # Fast-mode flags
@@ -354,31 +363,19 @@ def baseline_correct_spectra(X_spec_fxN: np.ndarray, baseline_cfg: dict) -> np.n
 # PREPROCESSING (leakage-safe)
 # =============================================================================
 def apply_preproc_leakage_safe(X_train, X_test, methods):
-    """X_*: (n_w, n_spectra). EMSC reference from TRAIN only."""
-    X_train = np.asarray(X_train)
-    X_test = np.asarray(X_test)
+    """X_*: (n_w, n_spectra). EMSC reference computed from TRAIN only.
 
-    emsc_ref = None
-    if "EMSC" in methods:
-        emsc_ref = np.mean(X_train, axis=1)
-
-    def _apply(Z):
-        out = np.asarray(Z)
-        for m in methods:
-            pre = Preprocessing(out)
-            if m == "EMSC":
-                out = pre.emsc(out, reference=emsc_ref)
-            elif m == "Normalization":
-                out = pre.normalize_spectrum(out)
-            elif m == "SNV":
-                out = pre.snv(out)
-            elif m == "Second Derivative":
-                out = pre.second_derivative(out)
-            else:
-                raise ValueError(f"Unknown preprocessing method: {m}")
-        return out
-
-    return _apply(X_train), _apply(X_test)
+    Uses Preprocessing.fit/transform so method dispatch and EMSC reference
+    handling are owned by the Preprocessing class, not duplicated here.
+    fit() stores the EMSC reference from X_train; transform() applies all
+    methods in sequence to each matrix independently.
+    """
+    pre = Preprocessing()
+    pre.fit(np.asarray(X_train), methods)
+    return (
+        pre.transform(np.asarray(X_train), methods),
+        pre.transform(np.asarray(X_test),  methods),
+    )
 
 
 # =============================================================================
@@ -1841,11 +1838,32 @@ def main(argv=None):
     need_baseline = any(ALL_PREPROC[p]["baseline"].get("do_baseline", False)
                         for p in preproc_names)
     if need_baseline:
-        logger.info("Precomputing ALS baseline corrections (baseline data)...")
-        X3_tr_bc  = baseline_correct_X3(X3_tr,  BASELINE_CFG)
-        X3_te_bc  = baseline_correct_X3(X3_te,  BASELINE_CFG)
-        X3_all_bc = baseline_correct_X3(X3_all, BASELINE_CFG)
-        logger.info("Baseline correction done.")
+        _bc_w     = args.baseline_workers
+        _bc_lam   = float(BASELINE_CFG["lam"])
+        _bc_p     = float(BASELINE_CFG["p"])
+        _bc_niter = int(BASELINE_CFG["niter"])
+        n_tr_spec = X3_tr.shape[0] * X3_tr.shape[1]
+        n_te_spec = X3_te.shape[0] * X3_te.shape[1]
+        logger.info(
+            "Precomputing ALS baseline (baseline data): "
+            f"{n_tr_spec} train + {n_te_spec} test spectra | "
+            f"workers={_bc_w} lam={_bc_lam} p={_bc_p} niter={_bc_niter}"
+        )
+        _t0 = time.time()
+
+        def _bc_X3(X3: np.ndarray) -> np.ndarray:
+            n_pat, n_rep, n_w = X3.shape
+            X_spec = X3.reshape(n_pat * n_rep, n_w).T   # (n_w, n_spectra)
+            X_bc = _bc_parallel(
+                X_spec, lam=_bc_lam, p=_bc_p, niter=_bc_niter, n_workers=_bc_w)
+            return X_bc.T.reshape(n_pat, n_rep, n_w)
+
+        X3_tr_bc  = _bc_X3(X3_tr)
+        X3_te_bc  = _bc_X3(X3_te)
+        # X3_all is concat(X3_tr, X3_te) along axis 0; ALS is per-spectrum so
+        # concatenating corrected halves is identical to correcting the whole.
+        X3_all_bc = np.concatenate([X3_tr_bc, X3_te_bc], axis=0)
+        logger.info(f"Baseline correction done in {time.time() - _t0:.1f}s.")
     else:
         X3_tr_bc = X3_te_bc = X3_all_bc = None
 
@@ -1907,11 +1925,20 @@ def main(argv=None):
 
         # Precompute baseline corrections for QC data
         if need_baseline:
-            logger.info("Precomputing ALS baseline corrections (QC data)...")
-            qc_tr["X_spec_bc"]  = baseline_correct_spectra(qc_tr["X_spec"],  BASELINE_CFG)
-            qc_te["X_spec_bc"]  = baseline_correct_spectra(qc_te["X_spec"],  BASELINE_CFG)
-            qc_all["X_spec_bc"] = baseline_correct_spectra(qc_all["X_spec"], BASELINE_CFG)
-            logger.info("QC baseline correction done.")
+            n_qc_tr = qc_tr["X_spec"].shape[1]
+            n_qc_te = qc_te["X_spec"].shape[1]
+            logger.info(
+                "Precomputing ALS baseline (QC data): "
+                f"{n_qc_tr} train + {n_qc_te} test spectra | workers={_bc_w}"
+            )
+            _t1 = time.time()
+            qc_tr["X_spec_bc"]  = _bc_parallel(
+                qc_tr["X_spec"],  lam=_bc_lam, p=_bc_p, niter=_bc_niter, n_workers=_bc_w)
+            qc_te["X_spec_bc"]  = _bc_parallel(
+                qc_te["X_spec"],  lam=_bc_lam, p=_bc_p, niter=_bc_niter, n_workers=_bc_w)
+            # qc_all["X_spec"] is hstack(qc_tr, qc_te); same per-spectrum independence applies.
+            qc_all["X_spec_bc"] = np.hstack([qc_tr["X_spec_bc"], qc_te["X_spec_bc"]])
+            logger.info(f"QC baseline correction done in {time.time() - _t1:.1f}s.")
 
         shared_data["qc_tr"]  = qc_tr
         shared_data["qc_te"]  = qc_te
